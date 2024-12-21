@@ -38,16 +38,19 @@ index = pc.Index(index_name)
 app = FastAPI()
 # adding CORS middleware
 origins = [
-"https://qa-bot-1.onrender.com",
-"https://qa-bot-1.onrender.com/",
-"https://qa-bot-1.onrender.com/chat",
+    "https://qa-bot-ijyw.onrender.com", 
+    "https://qa-bot-ijyw.onrender.com/",    
+    "https://qa-bot-ijyw.onrender.com/chat",    
+    "http://localhost:3000",            
+    "null"                              
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,  
+    allow_credentials=True,  
+    allow_methods=["*"],     
+    allow_headers=["*"],     
 )
 # Define the input model
 class QueryRequest(BaseModel):
