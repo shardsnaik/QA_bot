@@ -9,7 +9,7 @@ import os
 
 load_dotenv()
 # Set API keys
-openai.api_key = "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"
+openai.api_key = os.getenv('OPENAI_API_KEY')
 pc = Pinecone(
     api_key="pcsk_2E7WjQ_KNr1o8NERYCFbP1WMFYj5ygbaCwRtvynTEqAxx2tJzTnQcAqmY33zEetUgmoPXc"
 )
