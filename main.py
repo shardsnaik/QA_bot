@@ -9,7 +9,7 @@ import os
 
 load_dotenv()
 # Set API keys
-openai.api_key = os.getenv('OPENAI_API_KEY')
+openai.api_key = "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"
 pc = Pinecone(
     api_key="pcsk_2E7WjQ_KNr1o8NERYCFbP1WMFYj5ygbaCwRtvynTEqAxx2tJzTnQcAqmY33zEetUgmoPXc"
 )
@@ -111,3 +111,8 @@ def qa_chatbot(req: QueryRequest):
         return {"query": ques, "answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
