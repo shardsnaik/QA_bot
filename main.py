@@ -69,7 +69,7 @@ from langchain_community.embeddings import OpenAIEmbeddings
 embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 # Example usage
-pdf_paths = ["C:\\Users\\Public\\Gen_AI\\QA_bot\\About Yardstick.pdf"]
+pdf_paths = ["./About Yardstick.pdf"]
 all_texts = extract_text_from_pdfs(pdf_paths)
 
 # Embed and upsert each chunk into Pinecone
