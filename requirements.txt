@@ -6,3 +6,4 @@ pinecone==5.4.2
 python-dotenv==1.0.1
 pydantic==2.10.4
 langchain-community==0.3.13
+uvicorn==0.34.0
