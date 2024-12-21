@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q&A Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .answer-box {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .response {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .query {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Q&A Bot</h1>
+
+  <!-- Upload Section -->
+  <div class="section">
+    <h2>Upload Dataset (PDF)</h2>
+    <input type="file" id="pdfFile" accept=".pdf" />
+    <button onclick="uploadPDF()">Upload PDF</button>
+    <p id="uploadStatus"></p>
+  </div>
+
+  <!-- Q&A Section -->
+  <div class="section">
+    <h2>Ask a Question</h2>
+    <textarea id="question" placeholder="Type your question here..."></textarea>
+    <button onclick="askQuestion()">Get Answer</button>
+    <div class="answer-box" id="answerBox">
+      <h3>Response:</h3>
+      <p class="response"><span class="query">Question:</span> <span id="displayQuery"></span></p>
+      <p class="response"><span class="query">Answer:</span> <span id="displayAnswer"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const backendUrl = "https://qa-bot-1.onrender.com"; // Replace with your Render backend URL
+
+    // Upload PDF file
+    async function uploadPDF() {
+      const fileInput = document.getElementById("pdfFile");
+      const uploadStatus = document.getElementById("uploadStatus");
+
+      if (!fileInput.files[0]) {
+        uploadStatus.textContent = "Please select a file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        uploadStatus.textContent = "Uploading...";
+        const response = await fetch(`${backendUrl}/chat`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        uploadStatus.textContent = result.message || "File uploaded successfully!";
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        uploadStatus.textContent = "Error uploading file.";
+      }
+    }
+
+    // Ask question
+    async function askQuestion() {
+      const questionInput = document.getElementById("question");
+      const displayQuery = document.getElementById("displayQuery");
+      const displayAnswer = document.getElementById("displayAnswer");
+
+      const question = questionInput.value.trim();
+
+      if (!question) {
+        displayAnswer.textContent = "Please ask a question.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+
+        const result = await response.json();
+
+        console.log(result);
+        // Update the HTML to display the question and answer
+        displayQuery.textContent = result.query || question;
+        displayAnswer.textContent = result.answer || "No answer found.";
+      } catch (error) {
+        console.error("Error asking question:", error);
+        displayAnswer.textContent = "Error processing your question.";
+      }
+    }
+  </script>
+</body>
+</html>
