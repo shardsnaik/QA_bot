@@ -7,13 +7,14 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import os
 
-# load_dotenv()
-# # Set API keys
-# openai.api_key = os.getenv('openai_api_key')
+load_dotenv()
+# Set API keys
+openai.api_key = os.getenv('openai_api_key')
 # pc = Pinecone(
 #     api_key="pcsk_2E7WjQ_KNr1o8NERYCFbP1WMFYj5ygbaCwRtvynTEqAxx2tJzTnQcAqmY33zEetUgmoPXc"
 # )
 
+####
 # Specify serverless environment
 spec = ServerlessSpec(
     cloud="aws",
@@ -21,7 +22,7 @@ spec = ServerlessSpec(
 )
 
 # Create or connect to the index
-index_name = "yardstick-qa"
+index_name = "yardstick-qa2"
 if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name,
@@ -68,7 +69,7 @@ from langchain_community.embeddings import OpenAIEmbeddings
 embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 # Example usage
-pdf_paths = ["/content/About Yardstick.pdf"]
+pdf_paths = ["C:\\Users\\Public\\Gen_AI\\QA_bot\\About Yardstick.pdf"]
 all_texts = extract_text_from_pdfs(pdf_paths)
 
 # Embed and upsert each chunk into Pinecone
