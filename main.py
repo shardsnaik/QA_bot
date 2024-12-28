@@ -38,11 +38,9 @@ index = pc.Index(index_name)
 app = FastAPI()
 # adding CORS middleware
 origins = [
-    "https://qa-bot-ijyw.onrender.com", 
-    "https://qa-bot-ijyw.onrender.com/",    
-    "https://qa-bot-ijyw.onrender.com/chat",    
     "http://localhost:3000",            
-    "null"                              
+    "https://qa-bot-ijyw.onrender.com", 
+                          
 ]
 
 app.add_middleware(
