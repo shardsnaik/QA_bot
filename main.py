@@ -39,7 +39,8 @@ app = FastAPI()
 # adding CORS middleware
 origins = [
     "http://localhost:3000",            
-    "https://qa-bot-ijyw.onrender.com", 
+    'https://frontendqa.netlify.app/' 
+    "https://qa-bot-ijyw.onrender.com",
                           
 ]
 
