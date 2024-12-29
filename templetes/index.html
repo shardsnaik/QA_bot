@@ -92,10 +92,12 @@
 
       try {
         uploadStatus.textContent = "Uploading...";
-        const response = await fetch(`${backendUrl}/chat`, {
+        const response = await fetch(`${backendUrl}/upload`, { // Use correct endpoint for PDF upload
           method: "POST",
           body: formData,
         });
+
+        if (!response.ok) throw new Error("Failed to upload file.");
 
         const result = await response.json();
         uploadStatus.textContent = result.message || "File uploaded successfully!";
@@ -120,14 +122,19 @@
 
       try {
         const response = await fetch(`${backendUrl}/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
-        });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  body: JSON.stringify({ query: question })
+});
+
+
+        if (!response.ok) throw new Error("Failed to fetch response.");
 
         const result = await response.json();
 
-        console.log(result);
         // Update the HTML to display the question and answer
         displayQuery.textContent = result.query || question;
         displayAnswer.textContent = result.answer || "No answer found.";

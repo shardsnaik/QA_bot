@@ -1,5 +1,7 @@
 .App {
   text-align: center;
+  background: linear-gradient(to right, #8e46d1, #6a1b9a);
+
 }
 
 .App-logo {
@@ -14,7 +16,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background: linear-gradient(to bottom, #282c34, #1c1f26);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
