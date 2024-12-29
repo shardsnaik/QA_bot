@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import os
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 load_dotenv()
 # Set API keys
@@ -39,7 +40,7 @@ app = FastAPI()
 # adding CORS middleware
 origins = [
     "http://localhost:3000",            
-    'https://frontendqa.netlify.app/' 
+    'https://frontendqa.netlify.app', 
     "https://qa-bot-ijyw.onrender.com",
                           
 ]
