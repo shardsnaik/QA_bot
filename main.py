@@ -1,7 +1,7 @@
 from PyPDF2 import PdfReader
 from fastapi.responses import JSONResponse
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 import openai
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
@@ -9,7 +9,9 @@ from pydantic import BaseModel
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from io import BytesIO
 
+from langchain.vectorstores import Pinecone
 load_dotenv()
 # Set API keys
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -59,40 +61,51 @@ from langchain.chains import RetrievalQA
 # from langchain.chat_models import ChatOpenAI   # deprecated in local but works on colab notebook
 from langchain_community.chat_models import ChatOpenAI
 
-def extract_text_from_pdfs(pdf_paths):
+def extract_text_from_pdfs(pdf_file):
     all_texts = []
-    for pdf_path in pdf_paths:
-        reader = PdfReader(pdf_path)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text()
-        
-        # Splitting the text into smaller chunks using the RecursiveCharacterTextSplitter
-        txt_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            # length_function=len
-        )
-
-        texts = txt_splitter.split_text(text)
-        all_texts.extend(texts)
+    reader = PdfReader(pdf_file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
     
-    return all_texts
+    # Splitting the text into smaller chunks using the RecursiveCharacterTextSplitter
+    txt_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        # length_function=len
+    )    
+    texts = txt_splitter.split_text(text)
+    # all_texts.extend(texts)
+    
+    return texts
 
 # from langchain.embeddings.openai import OpenAIEmbeddings  # deprecated in local but works on colab notebook
 from langchain_community.embeddings import OpenAIEmbeddings
 embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 
+@app.post('/upload')
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        bytes_contents = BytesIO(contents)
+        all_texts = extract_text_from_pdfs(bytes_contents)
+        for i, text in enumerate(all_texts):
+            chunk_embedding = embedding.embed_query(text)
+            index.upsert([(f"chunk-{i}", chunk_embedding, {"text": text})])
+        return {"message": "PDF uploaded successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # Example usage
-pdf_paths = ["./About Yardstick.pdf"]
-all_texts = extract_text_from_pdfs(pdf_paths)
+# pdf_paths = ["./About Yardstick.pdf"]
+# all_texts = extract_text_from_pdfs(pdf_paths)
 
 # Embed and upsert each chunk into Pinecone
-for i, text in enumerate(all_texts):
-    chunk_embedding = embedding.embed_query(text)
-    index.upsert([(f"chunk-{i}", chunk_embedding, {"text": text})])
 
-from langchain.vectorstores import Pinecone
+
 
 retriever = Pinecone(
     index=index,
@@ -108,8 +121,8 @@ rag_model = RetrievalQA.from_chain_type(
     retriever=retriever.as_retriever() # Call as_retriever() method
 )
 
-print(f'Number of chunks = {len(all_texts)}')
-# print(f"First chunk:\n{all_texts[0]}")
+# print(f'Number of chunks = {len(all_texts)}')
+# # print(f"First chunk:\n{all_texts[0]}")
 
 @app.get('/')
 def homePage():
