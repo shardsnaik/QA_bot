@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from fastapi import FastAPI, HTTPException, UploadFile, File
 import openai
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone as ps, ServerlessSpec
 from dotenv import load_dotenv
 from pydantic import BaseModel
 import os
@@ -15,7 +15,7 @@ from langchain.vectorstores import Pinecone
 load_dotenv()
 # Set API keys
 openai.api_key = os.getenv('OPENAI_API_KEY')
-pc = Pinecone(
+pc = ps(
     api_key="pcsk_2E7WjQ_KNr1o8NERYCFbP1WMFYj5ygbaCwRtvynTEqAxx2tJzTnQcAqmY33zEetUgmoPXc"
 )
 

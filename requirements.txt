@@ -9,3 +9,4 @@ langchain-community==0.3.13
 uvicorn==0.34.0
 tiktoken==0.8.0
 fastapi-cors==0.0.6
+python_multipart==0.0.20
