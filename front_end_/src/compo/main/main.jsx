@@ -4,10 +4,46 @@ import './main.css'; // Assuming you have a CSS file for styling
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlay } from '@fortawesome/free-solid-svg-icons'
 
+
+
+import {ToastContainer, toast, Bounce } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
+
+
 const Main = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [pdfname, setpdfname] = useState('No file uploaded')
+  const [data_available, setdata_available] = useState(false)
+
+
+  
+const tostload =()=>{
+  toast.info('PDF Uploading....', {
+    position: "top-center",
+    autoClose: 6000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    } )
+}
+const tostmes =()=>{
+  toast.success('PDF Uploaded Successfully', {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    } )
+}
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -19,8 +55,9 @@ const Main = () => {
     const newMessage = { text: input, sender: 'user' };
     setMessages([...messages, newMessage]);
     // https://qa-bot-ijyw.onrender.com/chat
+    // https://qa-bot-wfjj.onrender.com  working 
     try {
-      const response = await fetch('https://qa-bot-ijyw.onrender.com/chat', {
+      const response = await fetch('https://qa-bot-wfjj.onrender.com/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,12 +80,36 @@ const Main = () => {
     setInput('');
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     console.log(file);
     if (file){
       setpdfname(file.name);
-    }
+      tostload()
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('https://qa-bot-wfjj.onrender.com/upload/', {
+          method: 'POST',
+          body: formData,
+        });
+        console.log(res);
+        
+        if (!res.ok){
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await res.json();
+        console.log('pdf uploaded', data);
+        setdata_available(true)
+        tostmes()
+        
+      }
+      catch (error){
+        console.error('Error communicating with the API:', error);  
+    }}
   }
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -58,6 +119,7 @@ const Main = () => {
   return (
 
     <div className='centr-con' >
+      <ToastContainer />
     <div className="main-container">
       <div className="upload-section">
         <div className="pdf-name">{pdfname}</div>
@@ -69,7 +131,7 @@ const Main = () => {
       </div>
 
       <div className="chat-section">
-        <div className={pdfname == 'No file uploaded' ? 'temp-header' : 'chat-header'}>RAG Model Integrated with Chat-Gpt and {pdfname.length > 10 ? `${pdfname.substring(0, 10)}...` : pdfname}</div>
+        <div className={!data_available ? 'temp-header' : 'chat-header'}>RAG Model Integrated with Chat-Gpt and {pdfname.length > 10 ? `${pdfname.substring(0, 10)}...` : pdfname}</div>
 
         <div className="chat-messages">
           {messages.map((message, index) => (

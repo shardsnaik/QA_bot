@@ -86,10 +86,11 @@
     padding: 10px;
     margin-bottom: 10px;
     display: flex;
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     flex-direction: column;
+    background: linear-gradient(180deg, #C93FEA 0%, #ffffff 50%, #8f0bb0 100%);
   }
   .message-user{
-    background-color: rgb(244, 237, 237);
     color: black;
     justify-content: flex-end;
     align-self: flex-end;
@@ -100,11 +101,15 @@
     margin: 2vh;
     max-width: 60%;
   word-wrap: break-word; /* Ensure long words break to fit within the container */
-  white-space: pre-wrap; 
+  white-space: pre-wrap;
+  box-shadow: 20px -10px 20px 11px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+
+  
   }
   .message-bot{
     border-radius: 1.5vh;
-    background-color:rgb(244, 237, 237);
+    /* background-color:rgb(244, 237, 237); */
     color: black;
     justify-content: flex-start;
     align-self: flex-start;
@@ -113,7 +118,9 @@
     max-width: 60%;
   word-wrap: break-word; /* Ensure long words break to fit within the container */
   white-space: pre-wrap; 
-    margin: 5vh;
+  margin: 3vh;
+  font-weight: 600;
+  box-shadow: -20px -2px 20px 11px rgba(0, 0, 0, 0.1);
   }
   .message-input {
     display: flex;
