@@ -16,12 +16,13 @@ const Main = () => {
   const [pdfname, setpdfname] = useState('No file uploaded')
   const [data_available, setdata_available] = useState(false)
 
+  const [isProcessing, setIsProcessing] = useState(false); // New state for processing
 
   
 const tostload =()=>{
   toast.info('PDF Uploading....', {
     position: "top-center",
-    autoClose: 6000,
+    autoClose: 10000,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: true,
@@ -31,6 +32,7 @@ const tostload =()=>{
     transition: Bounce,
     } )
 }
+
 const tostmes =()=>{
   toast.success('PDF Uploaded Successfully', {
     position: "top-center",
@@ -57,7 +59,7 @@ const tostmes =()=>{
     // https://qa-bot-ijyw.onrender.com/chat
     // https://qa-bot-wfjj.onrender.com  working 
     try {
-      const response = await fetch('https://qa-bot-wfjj.onrender.com/chat', {
+      const response = await fetch('http://127.0.0.1:8000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,12 +88,14 @@ const tostmes =()=>{
     if (file){
       setpdfname(file.name);
       tostload()
+      setIsProcessing(true)
 
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const res = await fetch('https://qa-bot-wfjj.onrender.com/upload/', {
+
+        const res = await fetch('http://127.0.0.1:8000/upload', {
           method: 'POST',
           body: formData,
         });
@@ -100,12 +104,19 @@ const tostmes =()=>{
         if (!res.ok){
           throw new Error('Network response was not ok');
         }
+       
 
         const data = await res.json();
+        // if (!data){
+        //   tostprocessing()
+        // }
+  
         console.log('pdf uploaded', data);
+
         setdata_available(true)
+        setIsProcessing(false)
         tostmes()
-        
+
       }
       catch (error){
         console.error('Error communicating with the API:', error);  
@@ -120,6 +131,7 @@ const tostmes =()=>{
 
     <div className='centr-con' >
       <ToastContainer />
+
     <div className="main-container">
       <div className="upload-section">
         <div className="pdf-name">{pdfname}</div>
@@ -131,7 +143,19 @@ const tostmes =()=>{
       </div>
 
       <div className="chat-section">
-        <div className={!data_available ? 'temp-header' : 'chat-header'}>RAG Model Integrated with Chat-Gpt and {pdfname.length > 10 ? `${pdfname.substring(0, 10)}...` : pdfname}</div>
+        {
+          isProcessing ? (
+            <div className='temp-header'>✨ Processing ✨
+
+            (Just a moment, please! ⏳)
+            
+            I'm working on your request. 😊
+            
+            
+            </div>
+          ):(<div className={!data_available ? 'temp-heade' : 'chat-header'}>RAG Model Integrated with Chat-Gpt and {pdfname.length > 10 ? `${pdfname.substring(0, 10)}...` : pdfname}</div>)
+        }
+        
 
         <div className="chat-messages">
           {messages.map((message, index) => (
@@ -140,6 +164,8 @@ const tostmes =()=>{
             </div>
           ))}
         </div>
+      </div>
+      </div>
         <div className="message-input">
           <input
             type="text"
@@ -153,8 +179,6 @@ const tostmes =()=>{
           <FontAwesomeIcon icon={faPlay} size="2xl" />
           </div>
         </div>
-      </div>
-      </div>
     </div>
   );
 };

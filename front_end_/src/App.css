@@ -38,3 +38,17 @@
     transform: rotate(360deg);
   }
 }
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+@media screen and (max-width:500px) {
+  body{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    box-sizing: border-box; 
+  }}
