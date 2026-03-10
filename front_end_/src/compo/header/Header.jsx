@@ -1,35 +1,91 @@
-import React from "react";
-import "./header.css"; // Include styles for better design
-import img_log from '../../images/logo2.png'
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGit } from "@fortawesome/free-brands-svg-icons";
-import { faBots } from "@fortawesome/free-brands-svg-icons";
-import { faShareFromSquare, faUser } from '@fortawesome/free-solid-svg-icons';
-// import { faUser } from "@fortawesome/free-solid-svg-icons";
+import React from 'react';
+import './header.css';
 
-const Header = () => {
+const Sidebar = ({ history = [], onNewChat, isOpen, onClose }) => {
+  const todayHistory = history.filter(h => h.time === 'Today');
+  const yesterdayHistory = history.filter(h => h.time === 'Yesterday');
+  const olderHistory = history.filter(h => h.time === 'Previous 7 Days');
+
   return (
-    <header className="app-header">
-      <div className="logo-section">
-      <FontAwesomeIcon className="app-logo" icon={faBots} bounce size="2xl" />      
-      </div>
-      <div className="title-social">
-      <div><h1 className="app-name">Q&A Bot v1</h1></div>
-      <div>
+    <>
+      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
+      <aside className={`sidebar${isOpen ? ' open' : ''}`}>
+        {/* Brand */}
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-icon">🤖</div>
+          <div className="sidebar-brand-text">
+            <h2>QA Bot</h2>
+            <span>Multimodal AI Assistant</span>
+          </div>
+        </div>
 
-      <nav className="social-links">
-        <a href="https://github.com/shardsnaik" target="_blank" rel="noopener noreferrer">
-        <FontAwesomeIcon icon={faGit} size="xl" />
-        </a>
-        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
-        <FontAwesomeIcon icon={faShareFromSquare} size="xl" />        </a>
-        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
-        <FontAwesomeIcon icon={faUser} size="xl" />        </a>
-      </nav>
-      </div>
-      </div>
-    </header>
+        {/* New Chat */}
+        <button className="new-chat-btn" onClick={() => {
+          onNewChat();
+          if (isOpen) onClose();
+        }}>
+          <span>✦</span> New Conversation
+        </button>
+
+        {/* Chat History Section */}
+        <div className="sidebar-scroll-area">
+          {todayHistory.length > 0 && (
+            <>
+              <div className="sidebar-section-label">Today</div>
+              <nav className="sidebar-nav">
+                {todayHistory.map((item) => (
+                  <button key={item.id} className="history-item">
+                    <span className="history-icon">💬</span>
+                    <span className="history-label">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
+
+          {yesterdayHistory.length > 0 && (
+            <>
+              <div className="sidebar-section-label" style={{ marginTop: '12px' }}>Yesterday</div>
+              <nav className="sidebar-nav">
+                {yesterdayHistory.map((item) => (
+                  <button key={item.id} className="history-item">
+                    <span className="history-icon">💬</span>
+                    <span className="history-label">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
+
+          {olderHistory.length > 0 && (
+            <>
+              <div className="sidebar-section-label" style={{ marginTop: '12px' }}>Previous 7 Days</div>
+              <nav className="sidebar-nav">
+                {olderHistory.map((item) => (
+                  <button key={item.id} className="history-item">
+                    <span className="history-icon">💬</span>
+                    <span className="history-label">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sidebar-footer">
+          <a
+            href="https://github.com/shardsnaik"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sidebar-footer-link"
+          >
+            <span>⚙</span> GitHub Repos
+          </a>
+        </div>
+      </aside>
+    </>
   );
 };
 
-export default Header;
+export default Sidebar;

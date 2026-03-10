@@ -1,184 +1,425 @@
-// filepath: /C:/Users/Public/Gen_AI/New folder (2)/QA_bot/front_end_/src/compo/main/main.jsx
-import React, { useState } from 'react';
-import './main.css'; // Assuming you have a CSS file for styling
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlay } from '@fortawesome/free-solid-svg-icons'
-
-
-
-import {ToastContainer, toast, Bounce } from 'react-toastify'
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import './main.css';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
-const Main = () => {
+// ─── Avatar ─────────────────────────────────────────────────────────────
+const Avatar = ({ role }) => {
+  if (role === 'user') {
+    return <div className="avatar avatar-user">U</div>;
+  }
+  return <div className="avatar avatar-bot">🤖</div>;
+};
+
+// ─── Message Bubble ──────────────────────────────────────────────────────
+const MessageBubble = ({ msg }) => {
+  const isUser = msg.sender === 'user';
+  return (
+    <div className={`message-row ${isUser ? 'message-row-user' : 'message-row-bot'}`}>
+      {!isUser && <Avatar role="bot" />}
+      <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-bot'}`}>
+        {msg.file && (
+          <div className="bubble-file-preview">
+            {msg.fileType?.startsWith('image/') ? (
+              <img src={msg.file} alt="uploaded" className="bubble-image" />
+            ) : (
+              <div className="bubble-file-chip">
+                <span className="bubble-file-icon">📎</span>
+                <span>{msg.fileName}</span>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="bubble-text">{msg.text}</div>
+        {msg.sources && msg.sources.length > 0 && (
+          <div className="bubble-sources">
+            <div className="sources-label">Sources</div>
+            {msg.sources.map((s, i) => (
+              <div key={i} className="source-chip">
+                {typeof s === 'string' ? s : s.doc_id || 'Unknown source'}
+              </div>
+            ))}
+          </div>
+        )}
+        {msg.meta && (
+          <div className="bubble-meta">{msg.meta}</div>
+        )}
+      </div>
+      {isUser && <Avatar role="user" />}
+    </div>
+  );
+};
+
+// ─── Typing Indicator ────────────────────────────────────────────────────
+const TypingIndicator = () => (
+  <div className="message-row message-row-bot">
+    <Avatar role="bot" />
+    <div className="bubble bubble-bot typing-bubble">
+      <span /><span /><span />
+    </div>
+  </div>
+);
+
+// ─── Welcome Screen ──────────────────────────────────────────────────────
+const WelcomeScreen = ({ onSuggestion }) => {
+  const suggestions = [
+    'Summarise the uploaded documents',
+    'What are the key takeaways?',
+    'Explain in simple terms',
+    'Give me 5 bullet points',
+  ];
+
+  return (
+    <div className="welcome">
+      <div className="welcome-icon">🤖</div>
+      <h2 className="welcome-title">How can I help you today?</h2>
+      <div className="suggestions-grid">
+        {suggestions.map((s, i) => (
+          <button key={i} className="suggestion-card" onClick={() => onSuggestion(s)}>
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────
+const Main = ({ onToggleSidebar, onConversationStart }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [pdfname, setpdfname] = useState('No file uploaded')
-  const [data_available, setdata_available] = useState(false)
+  const [attachedFile, setAttachedFile] = useState(null); // {file, name, type, previewUrl, internalMode}
+  const [isTyping, setIsTyping] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
-  const [isProcessing, setIsProcessing] = useState(false); // New state for processing
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  
-const tostload =()=>{
-  toast.info('PDF Uploading....', {
-    position: "top-center",
-    autoClose: 10000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "colored",
-    transition: Bounce,
-    } )
-}
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
-const tostmes =()=>{
-  toast.success('PDF Uploaded Successfully', {
-    position: "top-center",
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "colored",
-    transition: Bounce,
-    } )
-}
+  // Handle clicks outside the attach menu to close it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showAttachMenu && !e.target.closest('.attach-menu-container')) {
+        setShowAttachMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAttachMenu]);
+
+  // Auto-grow textarea
+  const autoGrow = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+  };
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
+    autoGrow();
   };
 
-  const handleSendMessage = async () => {
-    if (input.trim() === '') return;
+  const handleSuggestion = (text) => {
+    setInput(text);
+    textareaRef.current?.focus();
+  };
 
-    const newMessage = { text: input, sender: 'user' };
-    setMessages([...messages, newMessage]);
-    // https://qa-bot-ijyw.onrender.com/chat
-    // https://qa-bot-wfjj.onrender.com  working 
-    try {
-      const response = await fetch('http://127.0.0.1:8000/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: input }), // Ensure the payload matches the expected format
-      });
+  // ── File Handlers ──────────────────────────────────────────────────────
+  const triggerFileSelect = (modeKey, acceptFilter) => {
+    // Store the intended mode so onChange knows what to do
+    fileInputRef.current.dataset.mode = modeKey;
+    fileInputRef.current.accept = acceptFilter;
+    fileInputRef.current.click();
+    setShowAttachMenu(false);
+  };
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const internalMode = e.target.dataset.mode || 'upload';
+    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    
+    setAttachedFile({ 
+      file, 
+      name: file.name, 
+      type: file.type, 
+      previewUrl,
+      internalMode 
+    });
+    
+    e.target.value = '';
+    toast.info(`📎 Attached: ${file.name}`, {
+      position: 'top-center',
+      autoClose: 2500,
+      theme: 'dark',
+      transition: Bounce,
+    });
+    
+    textareaRef.current?.focus();
+  };
 
-      const data = await response.json();
-      const botMessage = { text: data.answer, sender: 'bot' };
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
-      console.log(data);
-    } catch (error) {
-      console.error('Error communicating with the API:', error);
+  const removeFile = () => {
+    if (attachedFile?.previewUrl) URL.revokeObjectURL(attachedFile.previewUrl);
+    setAttachedFile(null);
+  };
+
+  // ── Send / submit ──────────────────────────────────────────────────────
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text && !attachedFile) return;
+
+    // Use internalMode if file is attached, else standard chat
+    const sendingMode = attachedFile ? attachedFile.internalMode : 'chat';
+    const currentAttachment = attachedFile; // snapshot for the async call
+    
+    // Trigger history event if this is the first message
+    if (messages.length === 0 && onConversationStart) {
+      const title = text ? text.slice(0, 30) : `Shared ${currentAttachment.name}`;
+      onConversationStart(title);
     }
 
+    // Build user message
+    const userMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text: text || '',
+      file: currentAttachment?.previewUrl || null,
+      fileName: currentAttachment?.name || null,
+      fileType: currentAttachment?.type || null,
+    };
+    
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setAttachedFile(null); // Clear input bar immediately
+    setShowAttachMenu(false);
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    setIsTyping(true);
+
+    try {
+      let data;
+
+      if (sendingMode === 'chat') {
+        const res = await fetch(`${BASE_URL}/chat-direct`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        data = await res.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: data.answer || 'No answer returned.',
+            sources: data.sources || [],
+          },
+        ]);
+
+      } else if (sendingMode === 'vision') {
+        const form = new FormData();
+        form.append('file', currentAttachment.file);
+        form.append('message', text || 'Describe this image in detail.');
+        const res = await fetch(`${BASE_URL}/vision`, { method: 'POST', body: form });
+        if (!res.ok) throw new Error(`Vision error ${res.status}`);
+        data = await res.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: data.answer || 'No description returned.',
+            meta: `Model: ${data.model}`,
+          },
+        ]);
+
+      } else if (sendingMode === 'voice') {
+        const form = new FormData();
+        form.append('file', currentAttachment.file);
+        form.append('message', text || '');
+        const res = await fetch(`${BASE_URL}/voice`, { method: 'POST', body: form });
+        if (!res.ok) throw new Error(`Voice error ${res.status}`);
+        data = await res.json();
+        const resultText = data.result || data.transcript || 'No result returned.';
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: resultText,
+            meta: `Task: ${data.task} · Model: ${data.model}`,
+          },
+        ]);
+
+      } else if (sendingMode === 'upload') {
+        toast.info('📤 Uploading file…', {
+          position: 'top-center',
+          autoClose: 8000,
+          theme: 'dark',
+          transition: Bounce,
+        });
+        const form = new FormData();
+        form.append('file', currentAttachment.file);
+        if (text) form.append('message', text);
+        const res = await fetch(`${BASE_URL}/upload-direct`, { method: 'POST', body: form });
+        if (!res.ok) throw new Error(`Upload error ${res.status}`);
+        data = await res.json();
+        toast.success('✅ File uploaded successfully!', {
+          position: 'top-center',
+          autoClose: 3000,
+          theme: 'dark',
+          transition: Bounce,
+        });
+        const replyText = data.data?.answer
+          || data.data?.message
+          || `✅ "${currentAttachment.name}" has been uploaded and ingested successfully.`;
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now() + 1, sender: 'bot', text: replyText },
+        ]);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 2,
+          sender: 'bot',
+          text: `⚠️ ${err.message || 'Something went wrong. Please try again.'}`,
+        },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    console.log(file);
-    if (file){
-      setpdfname(file.name);
-      tostload()
-      setIsProcessing(true)
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-
-        const res = await fetch('http://127.0.0.1:8000/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        console.log(res);
-        
-        if (!res.ok){
-          throw new Error('Network response was not ok');
-        }
-       
-
-        const data = await res.json();
-        // if (!data){
-        //   tostprocessing()
-        // }
-  
-        console.log('pdf uploaded', data);
-
-        setdata_available(true)
-        setIsProcessing(false)
-        tostmes()
-
-      }
-      catch (error){
-        console.error('Error communicating with the API:', error);  
-    }}
-  }
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }}
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const showWelcome = messages.length === 0 && !isTyping;
 
   return (
-
-    <div className='centr-con' >
+    <div className="chat-shell">
       <ToastContainer />
 
-    <div className="main-container">
-      <div className="upload-section">
-        <div className="pdf-name">{pdfname}</div>
-        <div className="upload-button">
-
-        <input type="file" accept='.pdf' onChange={handleFileUpload} style={{opacity:0, position: 'absolute'}} id='file-upload' />
-         <button  className='upl-btn' >Upload</button>
-        </div>
+      {/* ── Top bar (mobile menu) ── */}
+      <div className="chat-topbar">
+        <button className="topbar-menu-btn" onClick={onToggleSidebar}>
+          ☰
+        </button>
+        <div className="topbar-spacer" />
       </div>
 
-      <div className="chat-section">
-        {
-          isProcessing ? (
-            <div className='temp-header'>✨ Processing ✨
+      {/* ── Message area ── */}
+      <div className="chat-messages-area">
+        {showWelcome ? (
+          <WelcomeScreen onSuggestion={handleSuggestion} />
+        ) : (
+          <div className="messages-list">
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} msg={msg} />
+            ))}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
 
-            (Just a moment, please! ⏳)
-            
-            I'm working on your request. 😊
-            
-            
+      {/* ── Input area ── */}
+      <div className="input-area-wrapper">
+        <div className="input-box">
+          {/* Attached file preview */}
+          {attachedFile && (
+            <div className="attached-preview">
+              {attachedFile.previewUrl ? (
+                <img src={attachedFile.previewUrl} alt="preview" className="attached-thumb" />
+              ) : (
+                <span className="attached-chip">📎 {attachedFile.name}</span>
+              )}
+              <button className="attached-remove" onClick={removeFile} title="Remove">✕</button>
             </div>
-          ):(<div className={!data_available ? 'temp-heade' : 'chat-header'}>RAG Model Integrated with Chat-Gpt and {pdfname.length > 10 ? `${pdfname.substring(0, 10)}...` : pdfname}</div>)
-        }
-        
+          )}
 
-        <div className="chat-messages">
-          {messages.map((message, index) => (
-            <div key={index} className={`message-${message.sender}`}>
-              {message.text}
+          <div className="input-row">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              id="global-file-input"
+            />
+            
+            {/* Plus attachment button and popup menu */}
+            <div className="attach-menu-container">
+              <button
+                className={`attach-plus-btn ${showAttachMenu ? 'active' : ''}`}
+                onClick={() => setShowAttachMenu((prev) => !prev)}
+                title="Attach file"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+              
+              {showAttachMenu && (
+                <div className="attach-dropdown">
+                  <button className="attach-option" onClick={() => triggerFileSelect('upload', '.pdf,text/plain,text/markdown,text/csv,application/pdf')}>
+                    <span className="opt-icon">📂</span> Upload Document
+                  </button>
+                  <button className="attach-option" onClick={() => triggerFileSelect('vision', 'image/*')}>
+                    <span className="opt-icon">🖼️</span> Upload Image
+                  </button>
+                  <button className="attach-option" onClick={() => triggerFileSelect('voice', 'audio/*')}>
+                    <span className="opt-icon">🎙️</span> Upload Audio
+                  </button>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
-      </div>
-        <div className="message-input">
-          <input
-            type="text"
-            placeholder="Type your message..."
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-          />
-  
-          <div className='send-icon' onClick={handleSendMessage} >
-          <FontAwesomeIcon icon={faPlay} size="2xl" />
+
+            {/* Text input */}
+            <textarea
+              ref={textareaRef}
+              className="input-textarea"
+              placeholder="Message QA Bot..."
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              rows={1}
+            />
+
+            {/* Send button */}
+            <button
+              className={`send-btn${(input.trim() || attachedFile) ? ' send-btn-active' : ''}`}
+              onClick={handleSend}
+              disabled={!input.trim() && !attachedFile}
+              aria-label="Send message"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
           </div>
         </div>
+        <p className="input-hint">
+          QA Bot uses RAG, Vision, and Audio AI. Press <kbd>Enter</kbd> to send.
+        </p>
+      </div>
     </div>
   );
 };

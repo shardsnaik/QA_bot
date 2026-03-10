@@ -1,54 +1,8 @@
+/* ===== App Shell ===== */
 .App {
-  text-align: center;
-  background: linear-gradient(to right, #8e46d1, #6a1b9a);
-
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background: linear-gradient(to bottom, #282c34, #1c1f26);
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: #0d0d0d;
 }
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-body::-webkit-scrollbar {
-  display: none;
-}
-
-@media screen and (max-width:500px) {
-  body{
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
-    box-sizing: border-box; 
-  }}

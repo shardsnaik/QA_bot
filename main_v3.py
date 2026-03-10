@@ -34,6 +34,7 @@ class RAGServices:
         self.embedding = None
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.uploaded_documents = set()  # Track uploaded documents
+        self.conversational_memory = {}
         self._initialize_services()
 
     def _initialize_services(self):
@@ -77,13 +78,14 @@ class RAGServices:
             raise HTTPException(400, detail=str(e))
 
     def _create_rag_chain(self, document_filter: List[str] = None):
-        """Create a RAG chain with optional document filtering"""
+        """Create a RAG chain with optional document filtering with conversational history"""
         search_kwargs = {'k': 5}  # Increased k for better context
         
         if document_filter:
             search_kwargs["filter"] = {"doc_name": {"$in": document_filter}}
         
         retriever = self.retriever.as_retriever(search_kwargs=search_kwargs)
+        memory = self.conversational_memory(se)
         
         return RetrievalQA.from_chain_type(
             llm=self.llm,
@@ -103,20 +105,23 @@ class RAGServices:
 Context from documents:
 {context}
 
+Chat History:
+{chat_history}
+
 Question: {question}
 
 Instructions:
-- Answer the question based on the provided context from the uploaded documents
+- Answer the question based on the provided context and conversation history
 - If the context contains relevant information, provide a comprehensive answer
 - If you cannot find relevant information in the context, then search on the net without considering context"
 - Be specific and cite relevant parts of the documents when possible
-- If the question refers to assignments, projects, or specific content, look for that information in the provided context
+- If the question refers to something mentioned earlier in the conversation, acknowledge that context
 
 Answer:"""
         
         return PromptTemplate(
             template=template,
-            input_variables=["context", "question"]
+            input_variables=["context","chat_history", "question"]
         )
 
     async def process_query_async(self, query: str, document_filter: List[str] = None) -> Dict[str, Any]:
@@ -212,6 +217,18 @@ Answer:"""
                 all_chunks.append(enriched_chunk)
             # return texts
             return all_chunks
+        
+        def create_conversational_memory(self, session_id: str)-> ConversationBufferMemory:
+            if session_id not in self.conversational_memory:
+                self.conversational_memory[session_id] = ConversationBufferMemory(
+                k = 10,
+                memory_key='chat_history',
+                return_messages=True,
+                output_key='answer'
+            
+            )
+            return self.conversational_memory[session_id]
+
     
 rag_services = RAGServices()
 app = FastAPI(title='Q-A bot', version='2.0')
