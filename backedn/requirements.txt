@@ -7,10 +7,10 @@ pinecone
 sentence-transformers
 langchain-text-splitters
 rank-bm25
-python-magic-bin
+python-magic
 pydantic
 python-dotenv
 pypdf
 openai
 pillow
-pydub 
+pydub
