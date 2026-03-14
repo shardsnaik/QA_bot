@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+python-magic
+huggingface_hub
+pydub
+requests
+groq
