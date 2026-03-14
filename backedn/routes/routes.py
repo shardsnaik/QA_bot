@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from utils.mime_detector import detect_mime_type
 from queues.celery_config import celery_app
 from pipelines.text_pipeline import query as run_rag_query, ingest as run_rag_ingest
-from pipelines.image_pipelin import run as run_image_pipeline
+from pipelines.image_pipeline import run as run_image_pipeline
 from pipelines.audio_pipeline  import run as run_audio_pipeline
 
 from utils.pdf_extractor import extract_text_from_pdf
