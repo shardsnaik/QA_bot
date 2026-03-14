@@ -1,11 +1,10 @@
 fastapi
-uvicorn
 groq
 openai
 pydub
 httpx
-
-
+websockets
+uvicorn[standard]
 python-dotenv
 edge-tts
 pydantic
