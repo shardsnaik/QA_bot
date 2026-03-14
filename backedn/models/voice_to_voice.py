@@ -80,7 +80,8 @@ app = FastAPI(title="Real-Time Voice AI", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000",
+    "https://ragchatbot.sharadsnaik.in/"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

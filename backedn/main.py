@@ -14,7 +14,8 @@ app = FastAPI(
 # ── CORS (adjust origins for production) ─────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000",
+    "https://ragchatbot.sharadsnaik.in/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +29,9 @@ app.include_router(router, prefix="/api/v1")
 async def root():
     return {"message": "QA Bot API is running", "docs": "/docs"}
 
+import os
+import uvicorn
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=6000)
+    port = int(os.environ.get("PORT", 6000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
