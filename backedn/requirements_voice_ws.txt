@@ -6,3 +6,4 @@ websockets
 edge-tts
 groq
 openai
+requests
