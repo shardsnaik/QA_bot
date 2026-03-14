@@ -13,3 +13,5 @@ rank-bm25
 pinecone
 requests
 python-multipart
+groq
+langchain-groq
