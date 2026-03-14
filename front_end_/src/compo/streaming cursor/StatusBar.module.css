@@ -1,0 +1,50 @@
+/* components/StatusBar.module.css */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  transition: border-color 0.3s;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.label {
+  color: var(--muted);
+  transition: color 0.3s;
+}
+
+/* ── State colours ── */
+.ready .dot     { background: #4ade80; box-shadow: 0 0 7px #4ade80; }
+.ready .label   { color: var(--text); }
+
+.listening .dot { background: var(--accent); box-shadow: 0 0 7px var(--accent); animation: pulse 1s infinite; }
+.listening .label { color: var(--text); }
+
+.processing .dot { background: #fb923c; box-shadow: 0 0 7px #fb923c; }
+.processing .label { color: var(--text); }
+
+.responding .dot { background: #38bdf8; box-shadow: 0 0 7px #38bdf8; }
+.responding .label { color: var(--text); }
+
+.speaking .dot  { background: #facc15; box-shadow: 0 0 7px #facc15; }
+.speaking .label { color: var(--text); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

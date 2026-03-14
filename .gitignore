@@ -1,4 +1,5 @@
 .env
-backedn\.env
-backedn\.env.example
-backedn\trials
+backedn/.env
+backedn/.env.example
+backedn/trials
+backedn/.env.example

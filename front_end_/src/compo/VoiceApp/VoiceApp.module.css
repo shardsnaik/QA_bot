@@ -1,0 +1,143 @@
+/* VoiceApp.module.css
+   Global tokens + shell layout.
+   Import this in your app entry (e.g. index.css or App.css) or keep as CSS module.
+*/
+
+/* ── Google Fonts (add to index.html <head> or via @import in global CSS)
+   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+── */
+
+:root {
+  --bg:        #080810;
+  --surface:   #0f0f1a;
+  --border:    #1c1c2e;
+  --accent:    #8b78ff;
+  --accent2:   #f76a8a;
+  --green:     #4ade80;
+  --text:      #e8e6f4;
+  --muted:     #64617e;
+  --radius:    13px;
+  --font-sans: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Shell ── */
+.shell {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100dvh;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 26px 22px 22px;
+  gap: 18px;
+  font-family: var(--font-sans);
+  color: var(--text);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Ambient orbs ── */
+.orb1,
+.orb2 {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(110px);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(139, 120, 255, 0.14) 0%, transparent 70%);
+  top: -180px;
+  left: -180px;
+}
+.orb2 {
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(247, 106, 138, 0.1) 0%, transparent 70%);
+  bottom: -140px;
+  right: -120px;
+}
+
+/* ── Header ── */
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.logoAccent { color: var(--accent); }
+
+/* ── Main (conversation) ── */
+.main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Footer (controls) ── */
+.footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.vizWrap {
+  width: 100%;
+  max-width: 420px;
+}
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-align: center;
+  min-height: 1em;
+}
+
+/* ── Action buttons ── */
+.actionRow {
+  display: flex;
+  gap: 10px;
+}
+
+.actionBtn {
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.actionBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(139, 120, 255, 0.07);
+}
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

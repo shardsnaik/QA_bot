@@ -1,16 +1,19 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import VoiceApp from '../VoiceApp/VoiceApp';
 import './main.css';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const BASE_URL = 'http://127.0.0.1:8000/api/v1';
+const CHAT_URL   = process.env.REACT_APP_CHAT_URL   || 'http://localhost:6001/api/v1';
+const VISION_URL = process.env.REACT_APP_VISION_URL || 'http://localhost:6002/api/v1';
+const VOICE_URL  = process.env.REACT_APP_VOICE_URL  || 'http://localhost:6003/api/v1';
 
 // ─── Avatar ─────────────────────────────────────────────────────────────
 const Avatar = ({ role }) => {
   if (role === 'user') {
     return <div className="avatar avatar-user">U</div>;
   }
-  return <div className="avatar avatar-bot">🤖</div>;
+  return <div className ="avatar avatar-bot">🤖</div>;
 };
 
 // ─── Message Bubble ──────────────────────────────────────────────────────
@@ -90,9 +93,10 @@ const WelcomeScreen = ({ onSuggestion }) => {
 const Main = ({ onToggleSidebar, onConversationStart }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState(null); // {file, name, type, previewUrl, internalMode}
+  const [attachedFile, setAttachedFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -208,7 +212,7 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
       let data;
 
       if (sendingMode === 'chat') {
-        const res = await fetch(`${BASE_URL}/chat-direct`, {
+        const res = await fetch(`${CHAT_URL}/chat-direct`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: text }),
@@ -229,7 +233,7 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
         const form = new FormData();
         form.append('file', currentAttachment.file);
         form.append('message', text || 'Describe this image in detail.');
-        const res = await fetch(`${BASE_URL}/vision`, { method: 'POST', body: form });
+        const res = await fetch(`${VISION_URL}/vision`, { method: 'POST', body: form });
         if (!res.ok) throw new Error(`Vision error ${res.status}`);
         data = await res.json();
         setMessages((prev) => [
@@ -246,7 +250,7 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
         const form = new FormData();
         form.append('file', currentAttachment.file);
         form.append('message', text || '');
-        const res = await fetch(`${BASE_URL}/voice`, { method: 'POST', body: form });
+        const res = await fetch(`${VOICE_URL}/voice`, { method: 'POST', body: form });
         if (!res.ok) throw new Error(`Voice error ${res.status}`);
         data = await res.json();
         const resultText = data.result || data.transcript || 'No result returned.';
@@ -270,7 +274,7 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
         const form = new FormData();
         form.append('file', currentAttachment.file);
         if (text) form.append('message', text);
-        const res = await fetch(`${BASE_URL}/upload-direct`, { method: 'POST', body: form });
+        const res = await fetch(`${CHAT_URL}/upload-direct`, { method: 'POST', body: form });
         if (!res.ok) throw new Error(`Upload error ${res.status}`);
         data = await res.json();
         toast.success('✅ File uploaded successfully!', {
@@ -316,31 +320,39 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
     <div className="chat-shell">
       <ToastContainer />
 
-      {/* ── Top bar (mobile menu) ── */}
+      {/* ── Top bar ── */}
       <div className="chat-topbar">
-        <button className="topbar-menu-btn" onClick={onToggleSidebar}>
-          ☰
-        </button>
+        <button className="topbar-menu-btn" onClick={onToggleSidebar}>☰</button>
         <div className="topbar-spacer" />
+        <button
+          className={`voice-toggle-btn${voiceMode ? ' voice-toggle-active' : ''}`}
+          onClick={() => setVoiceMode(v => !v)}
+          title={voiceMode ? 'Switch to text chat' : 'Switch to voice chat'}
+        >
+          🎙️ {voiceMode ? 'Text' : 'Voice'}
+        </button>
       </div>
 
-      {/* ── Message area ── */}
-      <div className="chat-messages-area">
-        {showWelcome ? (
-          <WelcomeScreen onSuggestion={handleSuggestion} />
-        ) : (
-          <div className="messages-list">
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} msg={msg} />
-            ))}
-            {isTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+      {/* ── Voice mode — full VoiceApp ── */}
+      {voiceMode ? (
+        <div className="voice-mode-wrapper">
+          <VoiceApp />
+        </div>
+      ) : showWelcome ? (
+        <WelcomeScreen onSuggestion={handleSuggestion} />
+      ) : (
+        <div className="messages-list">
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} msg={msg} />
+          ))}
+          {isTyping && <TypingIndicator />}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
 
-      {/* ── Input area ── */}
-      <div className="input-area-wrapper">
+      {/* ── Input area — hidden in voice mode ── */}
+      {!voiceMode && (
+        <div className="input-area-wrapper">
         <div className="input-box">
           {/* Attached file preview */}
           {attachedFile && (
@@ -419,7 +431,8 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
         <p className="input-hint">
           QA Bot uses RAG, Vision, and Audio AI. Press <kbd>Enter</kbd> to send.
         </p>
-      </div>
+        </div>
+      )}
     </div>
   );
 };
