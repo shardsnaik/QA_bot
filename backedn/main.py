@@ -11,11 +11,10 @@ app = FastAPI(
     description="Multimodal QA Bot with hybrid retrieval (BM25 + Vector Search)",
     version="1.0.0",
 )
-
 # ── CORS (adjust origins for production) ─────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,3 +27,8 @@ app.include_router(router, prefix="/api/v1")
 @app.get("/")
 async def root():
     return {"message": "QA Bot API is running", "docs": "/docs"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=6000)
