@@ -31,11 +31,10 @@ import json
 import logging
 import os
 import wave
-from collections import deque
 from typing import AsyncIterator
 
 import httpx
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger("voice_ws")
@@ -73,23 +72,41 @@ SYSTEM_PROMPT = (
 )
 
 # ──────────────────────────────────────────────────────────────
-# FastAPI app
+# ──────────────────────────────────────────────────────────────
+# Standalone FastAPI app  (deployed independently on Render)
 # ──────────────────────────────────────────────────────────────
 
-app = FastAPI(title="Real-Time Voice AI", version="1.0.0")
+ALLOWED_ORIGINS = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,https://ragchatbot.sharadsnaik.in"
+).split(",")
+
+app = FastAPI(
+    title="Voice AI — Real-Time WebSocket",
+    version="1.0.0",
+    docs_url="/docs",
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000",
-    "https://ragchatbot.sharadsnaik.in/"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Internal router (keeps endpoint definitions clean)
+router = APIRouter()
 
-@app.get("/health")
+
+@app.get("/health", tags=["Health"])
 async def health():
-    return {"status": "ok", "model": GROQ_LLM_MODEL}
+    return {"status": "ok", "model": GROQ_LLM_MODEL, "service": "voice-ws"}
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    return {"service": "Voice AI WebSocket", "ws": "/ws/voice", "docs": "/docs"}
 
 
 # ──────────────────────────────────────────────────────────────
@@ -445,7 +462,7 @@ async def process_utterance(
 # WebSocket endpoint
 # ──────────────────────────────────────────────────────────────
 
-@app.websocket("/ws/voice")
+@router.websocket("/ws/voice")
 async def voice_endpoint(ws: WebSocket):
     """
     Main WebSocket endpoint.
@@ -532,37 +549,5 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Register routes into app
+app.include_router(router)
