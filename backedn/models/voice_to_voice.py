@@ -76,10 +76,26 @@ SYSTEM_PROMPT = (
 # Standalone FastAPI app  (deployed independently on Render)
 # ──────────────────────────────────────────────────────────────
 
-ALLOWED_ORIGINS = os.environ.get(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,https://ragchatbot.sharadsnaik.in"
-).split(",")
+ALLOWED_ORIGINS = [
+    o.strip().rstrip("/")
+    for o in os.environ.get(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:5173,https://ragchatbot.sharadsnaik.in"
+    ).split(",")
+    if o.strip()
+]
+
+
+def _origin_allowed(origin: str | None) -> bool:
+    """
+    FastAPI CORSMiddleware does NOT protect WebSocket endpoints.
+    This function manually validates the Origin header on WS handshake.
+    Returns True if origin is in ALLOWED_ORIGINS or if no origin (e.g. curl/Postman).
+    """
+    if not origin:
+        return True                             # no origin = non-browser client, allow
+    clean = origin.strip().rstrip("/")
+    return clean in ALLOWED_ORIGINS
 
 app = FastAPI(
     title="Voice AI — Real-Time WebSocket",
@@ -480,8 +496,16 @@ async def voice_endpoint(ws: WebSocket):
         {"event": "turn_end"}
         {"event": "error",       "message": "..."}
     """
+    # Validate Origin header — CORSMiddleware does NOT cover WebSockets
+    origin = ws.headers.get("origin")
+    if not _origin_allowed(origin):
+        logger.warning("WebSocket rejected: origin '%s' not in ALLOWED_ORIGINS %s",
+                       origin, ALLOWED_ORIGINS)
+        await ws.close(code=1008, reason="Origin not allowed")
+        return
+
     await ws.accept()
-    logger.info("WebSocket connected: %s", ws.client)
+    logger.info("WebSocket connected | client=%s | origin=%s", ws.client, origin)
 
     session = VoiceSession()
 
@@ -544,10 +568,11 @@ async def voice_endpoint(ws: WebSocket):
 
 
 
+# ── Register WebSocket router into app ──────────────────────
+# Placed after all @router decorators are defined
+app.include_router(router)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-# Register routes into app
-app.include_router(router)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
