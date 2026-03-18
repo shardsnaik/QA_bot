@@ -1,10 +1,15 @@
 import React from 'react';
 import './header.css';
 
-const Sidebar = ({ history = [], onNewChat, isOpen, onClose }) => {
+const Sidebar = ({ history = [], onNewChat, onSelect, isOpen, onClose }) => {
   const todayHistory = history.filter(h => h.time === 'Today');
   const yesterdayHistory = history.filter(h => h.time === 'Yesterday');
   const olderHistory = history.filter(h => h.time === 'Previous 7 Days');
+
+  const handleSelect = (id) => {
+    if (onSelect) onSelect(id);
+    if (isOpen) onClose();
+  };
 
   return (
     <>
@@ -34,7 +39,7 @@ const Sidebar = ({ history = [], onNewChat, isOpen, onClose }) => {
               <div className="sidebar-section-label">Today</div>
               <nav className="sidebar-nav">
                 {todayHistory.map((item) => (
-                  <button key={item.id} className="history-item">
+                  <button key={item.id} className="history-item" onClick={() => handleSelect(item.id)}>
                     <span className="history-icon">💬</span>
                     <span className="history-label">{item.label}</span>
                   </button>
@@ -48,7 +53,7 @@ const Sidebar = ({ history = [], onNewChat, isOpen, onClose }) => {
               <div className="sidebar-section-label" style={{ marginTop: '12px' }}>Yesterday</div>
               <nav className="sidebar-nav">
                 {yesterdayHistory.map((item) => (
-                  <button key={item.id} className="history-item">
+                  <button key={item.id} className="history-item" onClick={() => handleSelect(item.id)}>
                     <span className="history-icon">💬</span>
                     <span className="history-label">{item.label}</span>
                   </button>
@@ -62,7 +67,7 @@ const Sidebar = ({ history = [], onNewChat, isOpen, onClose }) => {
               <div className="sidebar-section-label" style={{ marginTop: '12px' }}>Previous 7 Days</div>
               <nav className="sidebar-nav">
                 {olderHistory.map((item) => (
-                  <button key={item.id} className="history-item">
+                  <button key={item.id} className="history-item" onClick={() => handleSelect(item.id)}>
                     <span className="history-icon">💬</span>
                     <span className="history-label">{item.label}</span>
                   </button>

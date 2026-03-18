@@ -90,8 +90,8 @@ const WelcomeScreen = ({ onSuggestion }) => {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────
-const Main = ({ onToggleSidebar, onConversationStart }) => {
-  const [messages, setMessages] = useState([]);
+const Main = ({ onToggleSidebar, onConversationStart, initialMessages = [], onMessagesUpdate }) => {
+  const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -101,6 +101,18 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const isInitialMount = useRef(true);
+
+  // Sync messages back to App for persistence
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages);
+    }
+  }, [messages, onMessagesUpdate]);
 
   // Auto-scroll
   useEffect(() => {
@@ -341,12 +353,14 @@ const Main = ({ onToggleSidebar, onConversationStart }) => {
       ) : showWelcome ? (
         <WelcomeScreen onSuggestion={handleSuggestion} />
       ) : (
-        <div className="messages-list">
-          {messages.map((msg) => (
-            <MessageBubble key={msg.id} msg={msg} />
-          ))}
-          {isTyping && <TypingIndicator />}
-          <div ref={messagesEndRef} />
+        <div className="chat-messages-area">
+          <div className="messages-list">
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} msg={msg} />
+            ))}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       )}
 

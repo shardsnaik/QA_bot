@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 TEXT_TYPES  = {"text/plain", "text/markdown", "text/csv", "application/pdf"}
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"}
-AUDIO_TYPES = {"audio/wav", "audio/mpeg", "audio/mp3", "audio/ogg", "audio/flac"}
+AUDIO_TYPES = {"audio/wav", "audio/mpeg", "audio/mp3", "audio/ogg", "audio/flac", "audio/webm"}
 VIDEO_TYPES = {"video/mp4", "video/mpeg", "video/webm", "video/quicktime"}
 
 # ──────────────────────────────────────────────────────────────
