@@ -7,6 +7,60 @@ import 'react-toastify/dist/ReactToastify.css';
 const CHAT_URL   = process.env.REACT_APP_CHAT_URL   || 'http://localhost:6001/api/v1';
 const VISION_URL = process.env.REACT_APP_VISION_URL || 'http://localhost:6002/api/v1';
 const VOICE_URL  = process.env.REACT_APP_VOICE_URL  || 'http://localhost:6003/api/v1';
+const LAMBDA_START_URL = 'https://llh8b9b67e.execute-api.ap-south-1.amazonaws.com/test/start';
+
+// Fire Lambda to start EC2, then retry the chat endpoint until it responds.
+// Shows a persistent toast while waiting and resolves with the parsed JSON.
+const activateAndWaitForChat = async (message, maxRetries = 10, retryDelayMs = 8000) => {
+  // 1. Trigger EC2 start (fire-and-forget errors are fine)
+  try {
+    await fetch(LAMBDA_START_URL, { method: 'GET' });
+  } catch (err) {
+    console.warn('Lambda activation warning (non-blocking):', err);
+  }
+
+  // 2. Poll chat endpoint until EC2 is ready
+  const toastId = toast.loading('⏳ Starting server, please wait…', {
+    position: 'top-center',
+    theme: 'dark',
+  });
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(`${CHAT_URL}/chat-direct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      toast.update(toastId, {
+        render: '✅ Server is ready!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 2000,
+      });
+      return data;
+    } catch (err) {
+      if (attempt === maxRetries) {
+        toast.update(toastId, {
+          render: '❌ Server did not respond. Please try again in a moment.',
+          type: 'error',
+          isLoading: false,
+          autoClose: 4000,
+        });
+        throw new Error('Server did not become ready in time. Please retry.');
+      }
+      toast.update(toastId, {
+        render: `⏳ Starting server… (attempt ${attempt}/${maxRetries})`,
+        isLoading: true,
+      });
+      await sleep(retryDelayMs);
+    }
+  }
+};
 
 // ─── Avatar ─────────────────────────────────────────────────────────────
 const Avatar = ({ role }) => {
@@ -224,13 +278,8 @@ const Main = ({ onToggleSidebar, onConversationStart, initialMessages = [], onMe
       let data;
 
       if (sendingMode === 'chat') {
-        const res = await fetch(`${CHAT_URL}/chat-direct`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text }),
-        });
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        data = await res.json();
+        // Activate EC2 via Lambda and wait until chat endpoint is ready
+        data = await activateAndWaitForChat(text);
         setMessages((prev) => [
           ...prev,
           {
